@@ -3,7 +3,8 @@ package main
 import (
 	"calculator/calculatorpb"
 	"context"
-	"fmt"
+
+	"io"
 	"log"
 	"net"
 	"time"
@@ -16,7 +17,7 @@ type server struct {
 }
 
 func (*server) Calculator(ctx context.Context, req *calculatorpb.CalculatorRequest) (*calculatorpb.CalculatorResponse, error) {
-	fmt.Printf("Server hitted: %s", req)
+	log.Printf("Server hitted: %s", req)
 
 	num1 := req.GetNumber1()
 	num2 := req.GetNumber2()
@@ -29,7 +30,7 @@ func (*server) Calculator(ctx context.Context, req *calculatorpb.CalculatorReque
 }
 
 func (*server) GetPrime(req *calculatorpb.GetPrimeRequest, stream calculatorpb.CalculatorService_GetPrimeServer) error {
-	fmt.Printf("Server prime hitted: %s", req)
+	log.Printf("Server prime hitted: %s", req)
 
 	number := req.GetNumber()
 
@@ -47,6 +48,29 @@ func (*server) GetPrime(req *calculatorpb.GetPrimeRequest, stream calculatorpb.C
 	}
 
 	return nil
+}
+
+func (*server) GetAverage(stream calculatorpb.CalculatorService_GetAverageServer) error {
+	log.Printf("Server average hitted")
+
+	var total int32
+	var count int32
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			log.Println("Request stream end")
+			return stream.SendAndClose(&calculatorpb.GetAverageResponse{
+				Response: float64(total) / float64(count),
+			})
+		}
+
+		if err != nil {
+			log.Fatalf("Failed to listen request: %s", err)
+		}
+
+		total += req.GetNumber()
+		count++
+	}
 }
 
 func main() {

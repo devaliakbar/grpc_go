@@ -3,9 +3,10 @@ package main
 import (
 	"calculator/calculatorpb"
 	"context"
-	"fmt"
+
 	"io"
 	"log"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,11 +22,12 @@ func main() {
 
 	c := calculatorpb.NewCalculatorServiceClient(cc)
 	//doUnary(c)
-	doServerStream(c)
+	//doServerStream(c)
+	doClientStream(c)
 }
 
 func doUnary(c calculatorpb.CalculatorServiceClient) {
-	fmt.Println("Client Requesting")
+	log.Println("Client Requesting")
 
 	req := calculatorpb.CalculatorRequest{
 		Number1: 3,
@@ -37,11 +39,11 @@ func doUnary(c calculatorpb.CalculatorServiceClient) {
 		log.Fatalf("Failed to calculate: %s", err)
 	}
 
-	fmt.Printf("Response from server :%s\n", res)
+	log.Printf("Response from server :%s\n", res)
 }
 
 func doServerStream(c calculatorpb.CalculatorServiceClient) {
-	fmt.Println("Get prime client Requesting")
+	log.Println("Get prime client Requesting")
 
 	req := calculatorpb.GetPrimeRequest{
 		Number: 120,
@@ -65,4 +67,41 @@ func doServerStream(c calculatorpb.CalculatorServiceClient) {
 
 		log.Printf("Response from server: %s", msg)
 	}
+}
+
+func doClientStream(c calculatorpb.CalculatorServiceClient) {
+	log.Println("Get Average client Requesting")
+
+	requests := []*calculatorpb.GetAverageRequest{
+		{
+			Number: 1,
+		},
+		{
+			Number: 2,
+		},
+		{
+			Number: 3,
+		},
+		{
+			Number: 4,
+		},
+	}
+
+	stream, err := c.GetAverage(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to request: %s", err)
+	}
+
+	for _, req := range requests {
+		log.Printf("Sending request: %s", req)
+		stream.Send(req)
+		time.Sleep(1 * time.Second)
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("Failed to get average: %s", err)
+	}
+
+	log.Printf("Average : %s", res)
 }
