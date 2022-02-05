@@ -64,6 +64,34 @@ func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 	}
 }
 
+func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) error {
+	fmt.Println("Bi Stream")
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			fmt.Println("Request stream done")
+			return nil
+		}
+
+		if err != nil {
+			log.Fatalf("Failed to listen error: %s", err)
+			return err
+		}
+
+		firstName := req.GetGreeting().GetFirstName()
+		result := "Hello " + firstName
+
+		sendErr := stream.Send(&greetpb.GreetEveryoneResponse{
+			Result: result,
+		})
+		if sendErr != nil {
+			log.Fatalf("Failed to send: %s", sendErr)
+			return err
+		}
+	}
+}
+
 func main() {
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
 

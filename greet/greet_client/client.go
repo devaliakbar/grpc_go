@@ -24,7 +24,8 @@ func main() {
 
 	//doUnary(c)
 	//doServerStream(c)
-	doClientStream(c)
+	//doClientStream(c)
+	doBiStream(c)
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
@@ -125,4 +126,71 @@ func doClientStream(c greetpb.GreetServiceClient) {
 	}
 
 	log.Printf("Long request's response: %s", res)
+}
+
+func doBiStream(c greetpb.GreetServiceClient) {
+	fmt.Println("Bi streaming")
+
+	stream, err := c.GreetEveryone(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to strem: %s", err)
+	}
+
+	requests := []*greetpb.GreetEveryoneRequest{
+		{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Ali",
+			},
+		},
+		{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Akbar",
+			},
+		},
+		{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Ajay",
+			},
+		},
+		{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Arya",
+			},
+		},
+		{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Akshay",
+			},
+		},
+	}
+
+	waitc := make(chan struct{})
+
+	go func() {
+		for _, req := range requests {
+			log.Printf("Sending bi request: %s", req)
+			stream.Send(req)
+			time.Sleep(1 * time.Second)
+		}
+		stream.CloseSend()
+	}()
+
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				log.Printf("Failed to get stream:%s", err)
+				break
+			}
+
+			log.Printf("Response from server: %s", res)
+		}
+		close(waitc)
+	}()
+
+	<-waitc
 }
