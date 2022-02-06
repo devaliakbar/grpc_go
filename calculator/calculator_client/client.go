@@ -10,6 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -23,7 +24,8 @@ func main() {
 	c := calculatorpb.NewCalculatorServiceClient(cc)
 	//doUnary(c)
 	//doServerStream(c)
-	doClientStream(c)
+	//doClientStream(c)
+	doErrorUnary(c)
 }
 
 func doUnary(c calculatorpb.CalculatorServiceClient) {
@@ -104,4 +106,23 @@ func doClientStream(c calculatorpb.CalculatorServiceClient) {
 	}
 
 	log.Printf("Average : %s", res)
+}
+
+func doErrorUnary(c calculatorpb.CalculatorServiceClient) {
+	log.Println("ErrorUnary Requesting")
+
+	var number int32 = -9 ///CHANGE TO NON NEGETIVE NUMBER TO SEE RESULT
+	res, err := c.SquareRoot(context.Background(), &calculatorpb.SquareRootRequest{Number: number})
+
+	if err != nil {
+		resErr, ok := status.FromError(err)
+		if ok {
+			log.Printf("Error status code: %s", resErr.Code())
+			log.Fatalf("Error message from server: %s", resErr.Message())
+		} else {
+			log.Fatalf("Failed to request: %s", err)
+		}
+	}
+
+	log.Printf("Square root of %v is %v", number, res.GetNumberRoot())
 }

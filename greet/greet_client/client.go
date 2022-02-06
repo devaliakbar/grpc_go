@@ -9,7 +9,9 @@ import (
 
 	"github.com/devaliakbar/greet/greetpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -25,7 +27,8 @@ func main() {
 	//doUnary(c)
 	//doServerStream(c)
 	//doClientStream(c)
-	doBiStream(c)
+	//doBiStream(c)
+	doDeathlineUnary(c, 4*time.Second) //Change this second 2 to see timeout
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
@@ -40,6 +43,35 @@ func doUnary(c greetpb.GreetServiceClient) {
 
 	res, err := c.Greet(context.Background(), &req)
 	if err != nil {
+		log.Fatalf("Error greeting: %v", err)
+	}
+
+	fmt.Printf("Response from server: %v\n", res)
+}
+
+func doDeathlineUnary(c greetpb.GreetServiceClient, timeout time.Duration) {
+	fmt.Println("Client requesting")
+
+	req := greetpb.GreetRequest{
+		Greeting: &greetpb.Greeting{
+			FirstName: "Ali",
+			LastName:  "Akbar",
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	res, err := c.Greet(ctx, &req)
+	if err != nil {
+
+		statusErr, ok := status.FromError(err)
+		if ok {
+			if statusErr.Code() == codes.DeadlineExceeded {
+				log.Fatalf("Request timeout: %s", statusErr.Message())
+			}
+			log.Fatalf("Failed response from server: %s", statusErr.Message())
+		}
 		log.Fatalf("Error greeting: %v", err)
 	}
 

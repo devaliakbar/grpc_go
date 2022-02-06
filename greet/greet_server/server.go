@@ -19,6 +19,9 @@ type server struct {
 
 func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
 	fmt.Printf("Server hitted :%v\n", req)
+
+	time.Sleep(3 * time.Second)
+
 	firstName := req.GetGreeting().GetFirstName()
 	result := "Hello " + firstName
 	res := &greetpb.GreetResponse{

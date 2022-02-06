@@ -3,6 +3,8 @@ package main
 import (
 	"calculator/calculatorpb"
 	"context"
+	"fmt"
+	"math"
 
 	"io"
 	"log"
@@ -10,6 +12,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type server struct {
@@ -71,6 +75,20 @@ func (*server) GetAverage(stream calculatorpb.CalculatorService_GetAverageServer
 		total += req.GetNumber()
 		count++
 	}
+}
+
+func (*server) SquareRoot(ctx context.Context, req *calculatorpb.SquareRootRequest) (*calculatorpb.SquareRootResponse, error) {
+	log.Printf("Received squareroot RPC")
+	number := req.GetNumber()
+	if number < 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Number is less than 0: %v", number),
+		)
+	}
+	return &calculatorpb.SquareRootResponse{
+		NumberRoot: math.Sqrt(float64(number)),
+	}, nil
 }
 
 func main() {
