@@ -10,12 +10,26 @@ import (
 	"github.com/devaliakbar/greet/greetpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
 func main() {
-	cc, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	opts := grpc.WithTransportCredentials(insecure.NewCredentials())
+
+	tls := false
+	if tls {
+		certFile := "ssl/ca.crt"
+		creds, sslErr := credentials.NewClientTLSFromFile(certFile, "")
+		if sslErr != nil {
+			log.Fatalf("Failed to validate certificate: %s", sslErr)
+		}
+		opts = grpc.WithTransportCredentials(creds)
+	}
+
+	cc, err := grpc.Dial("localhost:50051", opts)
 
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
@@ -24,11 +38,11 @@ func main() {
 
 	c := greetpb.NewGreetServiceClient(cc)
 
-	//doUnary(c)
+	doUnary(c) //EXAMPLE OF SSL
+	//doDeathlineUnary(c, 4*time.Second) //Change this second 2 to see timeout
 	//doServerStream(c)
 	//doClientStream(c)
 	//doBiStream(c)
-	doDeathlineUnary(c, 4*time.Second) //Change this second 2 to see timeout
 }
 
 func doUnary(c greetpb.GreetServiceClient) {

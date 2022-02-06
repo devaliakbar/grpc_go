@@ -1,1 +1,5 @@
 greetpb/*.pb.go
+ssl/*.crt
+ssl/*.key
+ssl/*.csr
+ssl/*.pem
