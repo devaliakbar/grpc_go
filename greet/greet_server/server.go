@@ -12,6 +12,7 @@ import (
 	"github.com/devaliakbar/greet/greetpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
 )
 
 type server struct {
@@ -118,6 +119,8 @@ func main() {
 	s := grpc.NewServer(opts...)
 
 	greetpb.RegisterGreetServiceServer(s, &server{})
+
+	reflection.Register(s)
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
