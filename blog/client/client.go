@@ -34,4 +34,13 @@ func main() {
 	}
 
 	log.Printf("Blog created: %s", res)
+
+	readBlogRes, err := c.ReadBlog(context.Background(), &blogpb.ReadBlogRequest{
+		BlogId: res.Blog.GetId(),
+	})
+	if err != nil {
+		log.Fatalf("Failed to get blog: %s", err)
+	}
+
+	log.Printf("Response :%s", readBlogRes)
 }
