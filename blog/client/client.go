@@ -3,6 +3,7 @@ package main
 import (
 	"blog/blogpb"
 	"context"
+	"io"
 	"log"
 
 	"google.golang.org/grpc"
@@ -35,6 +36,7 @@ func main() {
 
 	log.Printf("Blog created: %s", res)
 
+	//Read Blog
 	readBlogRes, err := c.ReadBlog(context.Background(), &blogpb.ReadBlogRequest{
 		BlogId: res.Blog.GetId(),
 	})
@@ -43,4 +45,51 @@ func main() {
 	}
 
 	log.Printf("Response :%s", readBlogRes)
+
+	//UPDATE BLOG
+	updateBlog := &blogpb.UpdateBlogRequest{
+		Blog: &blogpb.Blog{
+			Id:       res.Blog.GetId(),
+			AuthorId: "Change Author",
+			Title:    "Title Changed",
+			Content:  "Content Changed",
+		},
+	}
+
+	updateRes, upRrr := c.UpdateBlog(context.Background(), updateBlog)
+	if upRrr != nil {
+		log.Fatalf("Error happened while updating: %s", upRrr)
+	}
+
+	log.Printf("Update Response: %s", updateRes)
+
+	//DELETE BLOG
+	dltBlog, dltErr := c.DeleteBlog(context.Background(), &blogpb.DeleteBlogRequest{
+		BlogId: res.Blog.GetId(),
+	})
+
+	if dltErr != nil {
+		log.Fatalf("Failed to delete: %s", dltErr)
+	}
+
+	log.Printf("Blog deleted: %s", dltBlog)
+
+	///List Blogs
+	stream, listBlogerr := c.ListBlog(context.Background(), &blogpb.ListBlogRequest{})
+
+	if listBlogerr != nil {
+		log.Fatalf("Failed to list blogs: %s", listBlogerr)
+	}
+
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Failed to receive: %s", res)
+		}
+
+		log.Printf("Received from list blog request: %s", res)
+	}
 }
