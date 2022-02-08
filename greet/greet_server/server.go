@@ -11,8 +11,10 @@ import (
 
 	"github.com/devaliakbar/greet/greetpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 type server struct {
@@ -30,6 +32,17 @@ func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb
 		Result: result,
 	}
 
+	if ctx.Err() != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("The client canceled the request!")
+			return nil, status.Error(codes.Canceled, "the client canceled the request")
+		}
+
+		return nil, status.Errorf(
+			codes.Aborted,
+			"Unexpected error",
+		)
+	}
 	return res, nil
 }
 
