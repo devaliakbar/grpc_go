@@ -24,11 +24,23 @@ type server struct {
 func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
 	fmt.Printf("Server hitted :%v\n", req)
 
+	firstName := req.GetGreeting().GetFirstName()
+	result := "Hello " + firstName
+	res := &greetpb.GreetResponse{
+		Result: result,
+	}
+
+	return res, nil
+}
+
+func (s *server) GreetDeadline(ctx context.Context, req *greetpb.GreetDeadlineRequest) (*greetpb.GreetDeadlineResponse, error) {
+	fmt.Printf("Greet deadline hitted :%v\n", req)
+
 	time.Sleep(3 * time.Second)
 
 	firstName := req.GetGreeting().GetFirstName()
 	result := "Hello " + firstName
-	res := &greetpb.GreetResponse{
+	res := &greetpb.GreetDeadlineResponse{
 		Result: result,
 	}
 

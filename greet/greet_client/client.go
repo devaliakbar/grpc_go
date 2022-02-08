@@ -66,7 +66,7 @@ func doUnary(c greetpb.GreetServiceClient) {
 func doDeathlineUnary(c greetpb.GreetServiceClient, timeout time.Duration) {
 	fmt.Println("Client requesting")
 
-	req := greetpb.GreetRequest{
+	req := greetpb.GreetDeadlineRequest{
 		Greeting: &greetpb.Greeting{
 			FirstName: "Ali",
 			LastName:  "Akbar",
@@ -76,7 +76,7 @@ func doDeathlineUnary(c greetpb.GreetServiceClient, timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	res, err := c.Greet(ctx, &req)
+	res, err := c.GreetDeadline(ctx, &req)
 	if err != nil {
 
 		statusErr, ok := status.FromError(err)

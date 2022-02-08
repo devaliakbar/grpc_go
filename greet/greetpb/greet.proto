@@ -12,6 +12,10 @@ message GreetRequest { Greeting greeting = 1; }
 
 message GreetResponse { string result = 1; }
 
+message GreetDeadlineRequest { Greeting greeting = 1; }
+
+message GreetDeadlineResponse { string result = 1; }
+
 message GreetManyTimesRequest { Greeting greeting = 1; }
 
 message GreetManyTimesResponse { string response = 1; }
@@ -34,4 +38,6 @@ service GreetService {
 
   rpc GreetEveryone(stream GreetEveryoneRequest)
       returns (stream GreetEveryoneResponse) {}
+
+  rpc GreetDeadline(GreetDeadlineRequest) returns (GreetDeadlineResponse) {}
 }
