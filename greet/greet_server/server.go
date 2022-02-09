@@ -86,10 +86,22 @@ func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 				Result: result,
 			})
 		}
+
 		if err != nil {
+			statusErr, ok := status.FromError(err)
+			if ok {
+				if statusErr.Code() == codes.Canceled {
+					return status.Errorf(
+						codes.Canceled,
+						fmt.Sprintf("Request canceled: %s", statusErr.Message()),
+					)
+				}
+				log.Fatalf("Failed to listen error: %s", statusErr.Message())
+			}
+
 			log.Fatalf("Failed to listen error: %s", err)
 		}
-
+		log.Printf("Client stream: %s", req.GetGreeting().GetFirstName())
 		result += req.GetGreeting().GetFirstName() + "! "
 	}
 }
