@@ -112,15 +112,27 @@ func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) er
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
-			fmt.Println("Request stream done")
+			log.Println("Request stream done")
 			return nil
 		}
 
 		if err != nil {
+			statusErr, ok := status.FromError(err)
+			if ok {
+				if statusErr.Code() == codes.Canceled {
+					log.Println("Request stream canceled")
+					return status.Errorf(
+						codes.Canceled,
+						fmt.Sprintf("Request canceled: %s", statusErr.Message()),
+					)
+				}
+				log.Fatalf("Failed to listen error: %s", statusErr.Message())
+			}
+
 			log.Fatalf("Failed to listen error: %s", err)
-			return err
 		}
 
+		log.Printf("Recieved :%s", req)
 		firstName := req.GetGreeting().GetFirstName()
 		result := "Hello " + firstName
 
