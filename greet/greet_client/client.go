@@ -50,7 +50,7 @@ func main() {
 
 func loadTLSCredentials() (credentials.TransportCredentials, error) {
 	// Load certificate of the CA who signed server's certificate
-	pemServerCA, err := ioutil.ReadFile("ssl/ca-cert.pem")
+	pemServerCA, err := ioutil.ReadFile("cert/ca-cert.pem")
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func loadTLSCredentials() (credentials.TransportCredentials, error) {
 	}
 
 	// Load client's certificate and private key
-	clientCert, err := tls.LoadX509KeyPair("ssl/client-cert.pem", "ssl/client-key.pem")
+	clientCert, err := tls.LoadX509KeyPair("cert/client-cert.pem", "cert/client-key.pem")
 	if err != nil {
 		return nil, err
 	}

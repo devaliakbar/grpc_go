@@ -1,4 +1,4 @@
 greetpb/*.pb.go
-ssl/*
-!ssl/*.cnf
-!ssl/*.sh
+cert/*
+!cert/*.cnf
+!cert/*.sh

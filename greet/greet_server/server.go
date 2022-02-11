@@ -150,9 +150,9 @@ func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) er
 }
 
 func loadTLSCredentials() (credentials.TransportCredentials, error) {
-	const serverCertFile = "ssl/server-cert.pem"
-	const serverKeyFile = "ssl/server-key.pem"
-	const clientCACertFile = "ssl/ca-cert.pem"
+	const serverCertFile = "cert/server-cert.pem"
+	const serverKeyFile = "cert/server-key.pem"
+	const clientCACertFile = "cert/ca-cert.pem"
 
 	// Load certificate of the CA who signed client's certificate
 	pemClientCA, err := ioutil.ReadFile(clientCACertFile)
