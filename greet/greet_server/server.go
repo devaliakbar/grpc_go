@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"strconv"
@@ -146,6 +149,38 @@ func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) er
 	}
 }
 
+func loadTLSCredentials() (credentials.TransportCredentials, error) {
+	const serverCertFile = "ssl/server-cert.pem"
+	const serverKeyFile = "ssl/server-key.pem"
+	const clientCACertFile = "ssl/ca-cert.pem"
+
+	// Load certificate of the CA who signed client's certificate
+	pemClientCA, err := ioutil.ReadFile(clientCACertFile)
+	if err != nil {
+		return nil, err
+	}
+
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(pemClientCA) {
+		return nil, fmt.Errorf("failed to add client CA's certificate")
+	}
+
+	// Load server's certificate and private key
+	serverCert, err := tls.LoadX509KeyPair(serverCertFile, serverKeyFile)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the credentials and return it
+	config := &tls.Config{
+		Certificates: []tls.Certificate{serverCert},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    certPool,
+	}
+
+	return credentials.NewTLS(config), nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
 
@@ -156,13 +191,13 @@ func main() {
 	opts := []grpc.ServerOption{}
 	tls := false
 	if tls {
-		certFile := "ssl/server.crt"
-		keyFile := "ssl/server.pem"
-		creds, sslErr := credentials.NewServerTLSFromFile(certFile, keyFile)
-		if sslErr != nil {
-			log.Fatalf("Failed loading certificate")
+
+		tlsCredentials, err := loadTLSCredentials()
+		if err != nil {
+			log.Fatalf("cannot load TLS credentials: %s", err)
 		}
-		opts = append(opts, grpc.Creds(creds))
+
+		opts = append(opts, grpc.Creds(tlsCredentials))
 	}
 
 	s := grpc.NewServer(opts...)

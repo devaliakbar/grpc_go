@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"time"
 
@@ -17,19 +20,19 @@ import (
 
 func main() {
 
-	opts := grpc.WithTransportCredentials(insecure.NewCredentials())
+	transportOption := grpc.WithTransportCredentials(insecure.NewCredentials())
 
 	tls := false
 	if tls {
-		certFile := "ssl/ca.crt"
-		creds, sslErr := credentials.NewClientTLSFromFile(certFile, "")
-		if sslErr != nil {
-			log.Fatalf("Failed to validate certificate: %s", sslErr)
+		tlsCredentials, err := loadTLSCredentials()
+		if err != nil {
+			log.Fatal("cannot load TLS credentials: ", err)
 		}
-		opts = grpc.WithTransportCredentials(creds)
+
+		transportOption = grpc.WithTransportCredentials(tlsCredentials)
 	}
 
-	cc, err := grpc.Dial("localhost:50051", opts)
+	cc, err := grpc.Dial("0.0.0.0:50051", transportOption)
 
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
@@ -38,11 +41,38 @@ func main() {
 
 	c := greetpb.NewGreetServiceClient(cc)
 
-	doUnary(c) //EXAMPLE OF SSL
+	doUnary(c)
 	//doDeathlineUnary(c, 4*time.Second) //Change this second 2 to see timeout
 	//doServerStream(c)
 	//doClientStream(c)
 	//doBiStream(c)
+}
+
+func loadTLSCredentials() (credentials.TransportCredentials, error) {
+	// Load certificate of the CA who signed server's certificate
+	pemServerCA, err := ioutil.ReadFile("ssl/ca-cert.pem")
+	if err != nil {
+		return nil, err
+	}
+
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(pemServerCA) {
+		return nil, fmt.Errorf("failed to add server CA's certificate")
+	}
+
+	// Load client's certificate and private key
+	clientCert, err := tls.LoadX509KeyPair("ssl/client-cert.pem", "ssl/client-key.pem")
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the credentials and return it
+	config := &tls.Config{
+		Certificates: []tls.Certificate{clientCert},
+		RootCAs:      certPool,
+	}
+
+	return credentials.NewTLS(config), nil
 }
 
 func doUnary(c greetpb.GreetServiceClient) {
